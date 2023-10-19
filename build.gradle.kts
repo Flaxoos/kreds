@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 /*
  *  Copyright (C) 2021 Abhijith Shivaswamy
  *   See the notice.md file distributed with this work for additional
@@ -24,7 +22,7 @@ println("Gradle Running on Java: ${JavaVersion.current()}")
 println("============================")
 
 plugins {
-    kotlin("jvm") version "1.9.0"
+    kotlin("multiplatform") version "1.9.0"
     id("org.jetbrains.dokka") version "1.8.20"
     id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
     `java-library`
@@ -33,6 +31,7 @@ plugins {
     id("com.dorongold.task-tree") version "2.1.1"
     id("io.gitlab.arturbosch.detekt") version "1.23.1"
     jacoco
+    id("io.kotest.multiplatform") version "5.6.2"
 }
 
 group = "io.github.crackthecodeabhi"
@@ -40,6 +39,7 @@ version = "0.9.0"
 
 repositories {
     mavenCentral()
+    maven { setUrl("https://oss.sonatype.org/content/repositories/snapshots") }
 }
 
 jacoco {
@@ -69,26 +69,82 @@ nexusPublishing {
         }
     }
 }
+kotlin {
 
-dependencies {
-    implementation("io.github.microutils:kotlin-logging-jvm:3.0.4")
-    implementation("io.netty:netty-codec-redis:4.1.86.Final")
-    implementation("io.netty:netty-handler:4.1.91.Final")
-    implementation(kotlin("stdlib"))
-    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.0")
+    targets {
+        jvm()
+        val hostOs = System.getProperty("os.name")
+        val arch = System.getProperty("os.arch")
+        val nativeTarget = when {
+            hostOs == "Mac OS X" && arch == "x86_64" -> macosX64("native")
+            hostOs == "Mac OS X" && arch == "aarch64" -> macosArm64("native")
+            hostOs == "Linux" -> linuxX64("native")
+            else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
+        }
+        nativeTarget.apply {
+            binaries {
+                sharedLib {
+                    baseName = "ktor"
+                }
+            }
 
-    testImplementation("io.kotest:kotest-runner-junit5:5.6.2")
-    testImplementation("io.kotest:kotest-assertions-core:5.5.4")
-    testImplementation("net.swiftzer.semver:semver:1.2.0")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.3")
-    testImplementation("ch.qos.logback:logback-classic:1.4.7")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+        }
+    }
+
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(kotlin("stdlib"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+                implementation("io.github.microutils:kotlin-logging:3.0.4")
+                implementation("io.ktor:ktor-network:2.3.5")
+                implementation(kotlin("stdlib"))
+                implementation("com.ionspin.kotlin:bignum:0.3.9-SNAPSHOT")
+
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+//                detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.0")
+            }
+        }
+
+        val commonTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("io.kotest:kotest-framework-engine:5.6.2")
+                implementation("io.kotest:kotest-assertions-core:5.5.4")
+                implementation("net.swiftzer.semver:semver:1.2.0")
+            }
+        }
+
+        val jvmMain by getting {
+            dependencies {
+                implementation("io.netty:netty-codec-redis:4.1.86.Final")
+                implementation("io.netty:netty-handler:4.1.91.Final")
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation("org.junit.jupiter:junit-jupiter-api:5.9.3")
+                implementation("ch.qos.logback:logback-classic:1.4.7")
+                runtimeOnly("org.junit.jupiter:junit-jupiter-engine")
+            }
+        }
+    }
+
+    jvm {
+        withJava()
+    }
+
+    linuxX64("linux")
+
+    explicitApi()
+
+    jvmToolchain(11)
 }
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
-    systemProperty("REDIS_PORT",System.getProperty("REDIS_PORT")?: "6379")
+    systemProperty("REDIS_PORT", System.getProperty("REDIS_PORT") ?: "6379")
 }
 
 tasks.withType(JavaCompile::class) {
@@ -96,16 +152,7 @@ tasks.withType(JavaCompile::class) {
     sourceCompatibility = "17"
 }
 
-kotlin {
-    explicitApi()
-}
-
 tasks {
-    withType<KotlinCompile>{
-        kotlinOptions {
-            jvmTarget = "11"
-        }
-    }
     register<Jar>("dokkaJar") {
         from(dokkaHtml)
         dependsOn(dokkaHtml)
@@ -174,9 +221,9 @@ publishing {
             from(components["java"])
             artifacts {
                 artifact(tasks["dokkaJar"])
-                artifact(tasks.kotlinSourcesJar) {
-                    classifier = "sources"
-                }
+//                artifact(tasks.kotlinSourcesJar) {
+//                    classifier = "sources"
+//                }
             }
         }
     }
