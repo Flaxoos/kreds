@@ -51,7 +51,7 @@ import io.github.crackthecodeabhi.kreds.protocol.ICommandProcessor
 import io.github.crackthecodeabhi.kreds.protocol.IntegerCommandProcessor
 import io.github.crackthecodeabhi.kreds.protocol.KredsRedisDataException
 import io.github.crackthecodeabhi.kreds.protocol.SimpleStringCommandProcessor
-import io.github.crackthecodeabhi.kreds.redis.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.RedisMessage
 import io.github.crackthecodeabhi.kreds.second
 import kotlin.time.Duration
 

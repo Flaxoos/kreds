@@ -19,9 +19,9 @@
 
 package io.github.crackthecodeabhi.kreds.pipeline
 
-import io.github.crackthecodeabhi.kreds.ExclusiveObject
-import io.github.crackthecodeabhi.kreds.KredsException
-import io.github.crackthecodeabhi.kreds.ReentrantMutexContextKey
+import io.github.crackthecodeabhi.kreds.messages.ExclusiveObject
+import io.github.crackthecodeabhi.kreds.messages.KredsException
+import io.github.crackthecodeabhi.kreds.messages.ReentrantMutexContextKey
 import io.github.crackthecodeabhi.kreds.args.createArguments
 import io.github.crackthecodeabhi.kreds.commands.*
 import io.github.crackthecodeabhi.kreds.connection.DefaultKredsClient
@@ -30,9 +30,8 @@ import io.github.crackthecodeabhi.kreds.protocol.ArrayCommandProcessor
 import io.github.crackthecodeabhi.kreds.protocol.ArrayHandler
 import io.github.crackthecodeabhi.kreds.protocol.KredsRedisDataException
 import io.github.crackthecodeabhi.kreds.protocol.SimpleStringCommandProcessor
-import io.github.crackthecodeabhi.kreds.redis.ArrayRedisMessage
-import io.github.crackthecodeabhi.kreds.withReentrantLock
-import io.netty.handler.codec.redis.ArrayRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.ArrayRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.withReentrantLock
 import io.netty.handler.codec.redis.ErrorRedisMessage
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.sync.Mutex

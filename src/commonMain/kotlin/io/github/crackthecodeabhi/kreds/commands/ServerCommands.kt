@@ -19,7 +19,7 @@
 
 package io.github.crackthecodeabhi.kreds.commands
 
-import io.github.crackthecodeabhi.kreds.KredsException
+import io.github.crackthecodeabhi.kreds.messages.KredsException
 import io.github.crackthecodeabhi.kreds.args.EmptyArgument
 import io.github.crackthecodeabhi.kreds.args.ServerInfoSection
 import io.github.crackthecodeabhi.kreds.args.SyncOption
@@ -30,7 +30,7 @@ import io.github.crackthecodeabhi.kreds.protocol.BulkStringCommandProcessor
 import io.github.crackthecodeabhi.kreds.protocol.CommandExecutor
 import io.github.crackthecodeabhi.kreds.protocol.ICommandProcessor
 import io.github.crackthecodeabhi.kreds.protocol.SimpleStringCommandProcessor
-import io.github.crackthecodeabhi.kreds.redis.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.RedisMessage
 
 internal enum class ServerCommand(override val subCommand: Command? = null) : Command {
     FLUSHALL, FLUSHDB, INFO;

@@ -2,13 +2,13 @@
  *  Copyright (C) 2023 Abhijith Shivaswamy
  *   See the notice.md file distributed with this work for additional
  *   information regarding copyright ownership.
- *
+ *  
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
- *
+ *  
  *       http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *   Unless required by applicable law or agreed to in writing, software
  *   distributed under the License is distributed on an "AS IS" BASIS,
  *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,8 +17,20 @@
  *
  */
 
-package io.github.crackthecodeabhi.kreds.redis
+package io.github.crackthecodeabhi.kreds.messages
 
-public expect class RedisMessage
+/**
+ * Abstract class for Simple Strings or Errors.
+ *
+ * @property content the content of this message
+ */
+internal open class AbstractStringRedisMessage(internal val content: String) : RedisMessage {
+    override fun toString(): String = "${classSimpleName}[content=$content]"
+}
 
-public expect class ArrayRedisMessage
+internal fun AbstractStringRedisMessage.toRedisString(): String =
+    StringBuilder(this::class.simpleName ?: ANONYMOUS)
+        .append('[')
+        .append("content=")
+        .append(content)
+        .append(']').toString()

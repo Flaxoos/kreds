@@ -19,10 +19,12 @@
 
 package io.github.crackthecodeabhi.kreds.connection
 
-import io.github.crackthecodeabhi.kreds.ReentrantMutexContextKey
-import io.github.crackthecodeabhi.kreds.toByteBuf
+import io.github.crackthecodeabhi.kreds.messages.ArrayRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.FullBulkStringRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.ReentrantMutexContextKey
 import io.github.crackthecodeabhi.kreds.toDefaultCharset
-import io.github.crackthecodeabhi.kreds.withReentrantLock
+import io.github.crackthecodeabhi.kreds.messages.withReentrantLock
+import io.github.crackthecodeabhi.kreds.toBuffer
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.netty.bootstrap.ServerBootstrap
@@ -31,14 +33,12 @@ import io.netty.channel.*
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.netty.handler.codec.redis.ArrayRedisMessage
-import io.netty.handler.codec.redis.FullBulkStringRedisMessage
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicInteger
 
-internal class TestConnectionImpl(endpoint: Endpoint, eventLoopGroup: EventLoopGroup, config: KredsClientConfig) :
-    KonnectionImpl(endpoint, eventLoopGroup, config) {
+internal class TestConnectionImpl(endpoint: Endpoint, eventLoopGroup: EventLoopGroup, config: KredsClientConfig.() -> Unit) :
+    KonnectionImpl(endpoint, config) {
     override val mutex: Mutex = Mutex()
     override val key: ReentrantMutexContextKey = ReentrantMutexContextKey(mutex)
 }
@@ -46,8 +46,8 @@ internal class TestConnectionImpl(endpoint: Endpoint, eventLoopGroup: EventLoopG
 private fun createPing(message: String): ArrayRedisMessage {
     return ArrayRedisMessage(
         listOf(
-            FullBulkStringRedisMessage("PING".toByteBuf()),
-            FullBulkStringRedisMessage(message.toByteBuf())
+            FullBulkStringRedisMessage("PING".toBuffer()),
+            FullBulkStringRedisMessage(message.toBuffer())
         )
     )
 }

@@ -1,6 +1,6 @@
 package io.github.crackthecodeabhi.kreds.connection
 
-import io.github.crackthecodeabhi.kreds.KredsException
+import io.github.crackthecodeabhi.kreds.messages.KredsException
 import kotlin.jvm.JvmStatic
 
 public open class KredsConnectionException: KredsException {

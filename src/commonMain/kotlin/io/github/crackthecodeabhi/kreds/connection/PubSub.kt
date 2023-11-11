@@ -29,10 +29,14 @@ import io.github.crackthecodeabhi.kreds.commands.ConnectionCommand
 import io.github.crackthecodeabhi.kreds.commands.responseTo
 import io.github.crackthecodeabhi.kreds.connection.PubSubCommand.*
 import io.github.crackthecodeabhi.kreds.protocol.*
-import io.github.crackthecodeabhi.kreds.redis.ArrayRedisMessage
-import io.github.crackthecodeabhi.kreds.redis.RedisMessage
-import io.netty.handler.codec.redis.FullBulkStringRedisMessage
-import io.netty.handler.codec.redis.SimpleStringRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.ArrayRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.ExclusiveObject
+import io.github.crackthecodeabhi.kreds.messages.FullBulkStringRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.KredsException
+import io.github.crackthecodeabhi.kreds.messages.ReentrantMutexContextKey
+import io.github.crackthecodeabhi.kreds.messages.SimpleStringRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.withReentrantLock
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
@@ -342,7 +346,7 @@ internal class DefaultKredsSubscriberClient(
             val first = reply.firstOrNull()
             if (first is String && first.lowercase() == "pong") {
                 if (reply.size == 2)
-                    readChannel.trySend(FullBulkStringRedisMessage((reply.second() as String).toByteBuf()))
+                    readChannel.trySend(FullBulkStringRedisMessage((reply.second() as String).toBuffer()))
                 else
                     readChannel.trySend(SimpleStringRedisMessage("PONG"))
             } else

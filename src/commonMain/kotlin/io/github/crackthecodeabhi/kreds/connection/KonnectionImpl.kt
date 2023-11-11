@@ -19,25 +19,33 @@
 
 package io.github.crackthecodeabhi.kreds.connection
 
-import io.github.crackthecodeabhi.kreds.redis.RedisMessage
-import io.github.crackthecodeabhi.kreds.withReentrantLock
+import io.github.crackthecodeabhi.kreds.messages.InlineCommandRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.RedisMessageType
+import io.github.crackthecodeabhi.kreds.messages.withReentrantLock
 import io.ktor.network.selector.SelectorManager
+import io.ktor.network.sockets.Connection
 import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.Socket
 import io.ktor.network.sockets.aSocket
+import io.ktor.network.sockets.connection
 import io.ktor.network.sockets.isClosed
 import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
+import io.ktor.util.pipeline.Pipeline
+import io.ktor.util.pipeline.PipelinePhase
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.ByteWriteChannel
-import io.ktor.utils.io.readUTF8Line
-import io.ktor.utils.io.writeStringUtf8
+import io.ktor.utils.io.cancel
+import io.ktor.utils.io.close
+import io.ktor.utils.io.readRemaining
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
+import kotlinx.io.Buffer
 import mu.KotlinLogging
+import kotlinx.coroutines.channels.Channel as KChannel
 
 /**
  * A [KonnectionImpl] manages the state and interactions of a TCP connection
@@ -62,16 +70,41 @@ private val logger = KotlinLogging.logger {}
 
 internal abstract class KonnectionImpl(
     internal open val endpoint: Endpoint,
-    val config: KredsClientConfig
+    val config: KredsClientConfig.() -> Unit
 ) : Konnection {
 
     private val selectorManager = SelectorManager(Dispatchers.IO)
     private var socket: Socket? = null
-    private var readChannel: ByteReadChannel? = null
-    private var writeChannel: ByteWriteChannel? = null
+    private var connection: Connection? = null
+    private var readChannel: KChannel<RedisMessage>? = null
+    private val readPipeline = Pipeline<RedisMessage, ReadPipelineContext>(Encoding, Timeout)
+    private val writePipeline =
+        Pipeline<RedisMessage, WritePipelineContext>(
+            Decoding,
+            BulkStringAggregation,
+            ArrayAggregation,
+            Response,
+            Timeout
+        ).apply {
+            intercept(Decoding) {
 
-    // Note: Ensure proper serialization/deserialization of RedisMessage
-    private val messageChannel: Channel<RedisMessage> = Channel(Channel.UNLIMITED)
+            }
+            intercept(BulkStringAggregation) {
+
+            }
+            intercept(ArrayAggregation) {
+
+            }
+            intercept(Response) {
+
+            }
+            intercept(Timeout) {
+
+            }
+        }
+
+    //TODO: Ensure proper serialization/deserialization of RedisMessage
+    private val messageChannel: KChannel<RedisMessage> = KChannel(Channel.UNLIMITED)
 
     override suspend fun isConnected(): Boolean = withReentrantLock {
         socket?.let { !it.isClosed } == true
@@ -79,7 +112,10 @@ internal abstract class KonnectionImpl(
 
     override suspend fun flush(): Unit = withReentrantLock {
         if (!isConnected()) throw KredsNotYetConnectedException()
-        else writeChannel!!.flush()
+        else {
+            connection!!.input.cancel()
+            connection!!.output.close()
+        }
     }
 
     override suspend fun write(message: RedisMessage): Unit = writeInternal(message, false)
@@ -94,11 +130,12 @@ internal abstract class KonnectionImpl(
 
     override suspend fun connect(): Unit = withReentrantLock {
         if (!isConnected()) {
-            socket = aSocket(selectorManager).tcp().connect(InetSocketAddress(endpoint.host, endpoint.port))
-            readChannel = socket!!.openReadChannel()
-            writeChannel = socket!!.openWriteChannel(autoFlush = false)
+            val serverSocket = aSocket(selectorManager).tcp().bind(InetSocketAddress(endpoint.host, endpoint.port))
+            socket = serverSocket.accept()
+            val receiveChannel = socket!!.openReadChannel()
+            connection = socket!!.connection()
 
-            readMessages()
+            receiveChannel.readMessages()
             logger.trace { "New connection created to $endpoint" }
         }
     }
@@ -106,24 +143,31 @@ internal abstract class KonnectionImpl(
 
     private suspend fun writeInternal(message: RedisMessage, flush: Boolean): Unit = withReentrantLock {
         if (!isConnected()) throw KredsNotYetConnectedException()
-        writeChannel?.apply {
-            // TODO: Ensure you're writing data according to the protocol
-            writeStringUtf8("your serialized message here")
+        with(connection?.output ?: throw KredsConnectionException("Write channel is not available.")) {
+            val context = WritePipelineContext(this)
+            writePipeline.execute(context = context, subject = message)
             if (flush) {
-                flush()
+                connection?.output?.flush()
             }
-        } ?: throw KredsConnectionException("Write channel is not available.")
+        }
     }
 
-    private suspend fun readMessages() = withContext(Dispatchers.IO) {
+    private suspend fun ByteReadChannel.readMessages() = withContext(Dispatchers.IO) {
+
         while (isConnected()) {
             try {
-                // Note: Ensure you're reading data according to the protocol
-                val message = readChannel?.readUTF8Line()
-
-                if (message != null) {
-                    // TODO: Convert `message` to `RedisMessage` and send it to `messageChannel`
-                    messageChannel.send(message.toRedisMessage())
+                val messageType = RedisMessageType.readFrom(this@readMessages.readByte(), TODO())
+                when (messageType) {
+                    RedisMessageType.INLINE_COMMAND -> InlineCommandRedisMessage(Buffer()this@readMessages.readRemaining().also {   })
+                    RedisMessageType.SIMPLE_STRING -> TODO()
+                    RedisMessageType.ERROR -> TODO()
+                    RedisMessageType.INTEGER -> TODO()
+                    RedisMessageType.BULK_STRING -> TODO()
+                    RedisMessageType.ARRAY_HEADER -> TODO()
+                }
+                with(connection?.input ?: throw KredsConnectionException("Read channel is not available.")) {
+                    val context = ReadPipelineContext(this)
+                    readPipeline.execute(context = context, subject = readChannel!!.receive())
                 }
             } catch (e: Exception) {
                 // TODO: Handle exceptions such as closed channels, etc.
@@ -132,12 +176,24 @@ internal abstract class KonnectionImpl(
     }
 
     override suspend fun disconnect(): Unit = withReentrantLock {
+        connection?.output?.close()
+        connection?.input?.cancel()
         socket?.close()
         socket = null
-        readChannel = null
-        writeChannel = null
+        connection = null
         messageChannel.close()
     }
 }
 
 public fun String.toRedisMessage(): RedisMessage = TODO()
+
+public data class WritePipelineContext(val data: ByteWriteChannel)
+public data class ReadPipelineContext(val data: ByteReadChannel)
+
+internal val Encoding = PipelinePhase("Encoding")
+
+internal val Decoding = PipelinePhase("Decoding")
+internal val BulkStringAggregation = PipelinePhase("BulkStringAggregation")
+internal val ArrayAggregation = PipelinePhase("ArrayAggregation")
+internal val Timeout = PipelinePhase("Timeout")
+internal val Response = PipelinePhase("Response")

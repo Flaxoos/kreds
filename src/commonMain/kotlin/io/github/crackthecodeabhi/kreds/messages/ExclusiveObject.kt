@@ -17,7 +17,7 @@
  *
  */
 
-package io.github.crackthecodeabhi.kreds
+package io.github.crackthecodeabhi.kreds.messages
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

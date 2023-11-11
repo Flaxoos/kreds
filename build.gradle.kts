@@ -1,3 +1,5 @@
+import org.gradle.internal.impldep.org.bouncycastle.cms.RecipientId.password
+
 /*
  *  Copyright (C) 2021 Abhijith Shivaswamy
  *   See the notice.md file distributed with this work for additional
@@ -20,6 +22,17 @@
 println("============================")
 println("Gradle Running on Java: ${JavaVersion.current()}")
 println("============================")
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("org.jetbrains.kotlinx:atomicfu-gradle-plugin:0.22.0")
+    }
+}
+apply(plugin = "kotlinx-atomicfu")
 
 plugins {
     kotlin("multiplatform") version "1.9.0"
@@ -73,21 +86,14 @@ kotlin {
 
     targets {
         jvm()
-        val hostOs = System.getProperty("os.name")
-        val arch = System.getProperty("os.arch")
-        val nativeTarget = when {
-            hostOs == "Mac OS X" && arch == "x86_64" -> macosX64("native")
-            hostOs == "Mac OS X" && arch == "aarch64" -> macosArm64("native")
-            hostOs == "Linux" -> linuxX64("native")
-            else -> throw GradleException("Host OS is not supported in Kotlin/Native.")
-        }
-        nativeTarget.apply {
-            binaries {
-                sharedLib {
-                    baseName = "ktor"
+        listOf(linuxX64(), /*linuxArm64(),*/ macosX64(), macosArm64()).forEach {
+            it.apply {
+                binaries {
+                    sharedLib {
+                        baseName = "ktor"
+                    }
                 }
             }
-
         }
     }
 
@@ -95,10 +101,12 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(kotlin("stdlib"))
+                implementation(kotlin("stdlib-common"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
                 implementation("io.github.microutils:kotlin-logging:3.0.4")
+                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.3.0")
                 implementation("io.ktor:ktor-network:2.3.5")
-                implementation(kotlin("stdlib"))
+                implementation("io.ktor:ktor-client-core:2.3.5")
                 implementation("com.ionspin.kotlin:bignum:0.3.9-SNAPSHOT")
 
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
@@ -134,8 +142,6 @@ kotlin {
     jvm {
         withJava()
     }
-
-    linuxX64("linux")
 
     explicitApi()
 

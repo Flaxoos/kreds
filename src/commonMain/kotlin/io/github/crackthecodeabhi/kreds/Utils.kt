@@ -22,6 +22,9 @@ package io.github.crackthecodeabhi.kreds
 import io.ktor.utils.io.charsets.Charsets
 import io.ktor.utils.io.core.ByteReadPacket
 import io.ktor.utils.io.core.readText
+import io.ktor.utils.io.core.toByteArray
+import kotlinx.io.Buffer
+import kotlinx.io.readString
 
 /**ø
  * Any class marked with this annotation is **SAFE** to be called concurrently from coroutines.
@@ -40,7 +43,20 @@ internal annotation class CoroutineUnsafe
 
 internal fun String.toBytePacket(): ByteReadPacket = ByteReadPacket(this.encodeToByteArray())
 
-internal fun ByteReadPacket.toDefaultCharset(): String = this.readText(Charsets.UTF_8)
+internal fun String.toBuffer(): Buffer {
+    // Create a new Buffer instance.
+    val buffer = Buffer()
+
+    // Convert the string to a ByteArray.
+    val bytes = this.toByteArray(Charsets.UTF_8)
+
+    // Write the bytes to the buffer.
+    buffer.write(bytes, 0, bytes.size)
+
+    return buffer
+}
+
+internal fun Buffer.toDefaultCharset(): String = this.readString()
 
 public data class FieldValue<out A, out B>(val field: A, val value: B)
 public typealias StringFieldValue = FieldValue<String, String>

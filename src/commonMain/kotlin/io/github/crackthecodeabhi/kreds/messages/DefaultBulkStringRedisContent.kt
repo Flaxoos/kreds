@@ -2,13 +2,13 @@
  *  Copyright (C) 2023 Abhijith Shivaswamy
  *   See the notice.md file distributed with this work for additional
  *   information regarding copyright ownership.
- *
+ *  
  *   Licensed under the Apache License, Version 2.0 (the "License");
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
- *
+ *  
  *       http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *   Unless required by applicable law or agreed to in writing, software
  *   distributed under the License is distributed on an "AS IS" BASIS,
  *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,19 +17,24 @@
  *
  */
 
-package io.github.crackthecodeabhi.kreds
+package io.github.crackthecodeabhi.kreds.messages
 
-import kotlin.jvm.JvmStatic
+import kotlinx.io.Buffer
 
-/**
- * Base exception for all exceptions throws by Kreds
- */
-public open class KredsException: RuntimeException{
-    internal companion object {
-        @JvmStatic
-        val serialVersionUID = -342312132189773098L
+internal open class DefaultBulkStringRedisContent(override val content: Buffer) : RedisMessage, BulkStringRedisContent {
+    override fun copy(): BulkStringRedisContent =
+        DefaultBulkStringRedisContent(content.copy())
+
+
+    //TODO: is this right? is it needed?
+    override fun duplicate(): BulkStringRedisContent =
+        DefaultBulkStringRedisContent(content.copy())
+
+
+    override fun replace(content: Buffer): BulkStringRedisContent {
+        return DefaultBulkStringRedisContent(content)
     }
-    internal constructor(message: String): super(message)
-    internal constructor(throwable: Throwable): super( throwable)
-    internal constructor(message: String, throwable: Throwable): super(message, throwable)
+
+    override fun toString(): String = "${classSimpleName}[content=$content]"
+
 }

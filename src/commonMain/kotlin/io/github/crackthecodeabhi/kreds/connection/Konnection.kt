@@ -20,9 +20,9 @@
 package io.github.crackthecodeabhi.kreds.connection
 
 import io.github.crackthecodeabhi.kreds.CoroutineSafe
-import io.github.crackthecodeabhi.kreds.ExclusiveObject
-import io.github.crackthecodeabhi.kreds.redis.RedisMessage
-import io.github.crackthecodeabhi.kreds.withReentrantLock
+import io.github.crackthecodeabhi.kreds.messages.ExclusiveObject
+import io.github.crackthecodeabhi.kreds.messages.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.withReentrantLock
 
 /**
  * Interface which models a connection to a redis server.

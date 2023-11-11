@@ -19,7 +19,7 @@
 
 package io.github.crackthecodeabhi.kreds.connection
 
-import io.github.crackthecodeabhi.kreds.ReentrantMutexContextKey
+import io.github.crackthecodeabhi.kreds.messages.ReentrantMutexContextKey
 import io.github.crackthecodeabhi.kreds.args.Argument
 import io.github.crackthecodeabhi.kreds.commands.BlockingListCommands
 import io.github.crackthecodeabhi.kreds.commands.BlockingZSetCommands
@@ -55,8 +55,8 @@ import io.github.crackthecodeabhi.kreds.pipeline.Transaction
 import io.github.crackthecodeabhi.kreds.pipeline.TransactionImpl
 import io.github.crackthecodeabhi.kreds.protocol.CommandExecutor
 import io.github.crackthecodeabhi.kreds.protocol.ICommandProcessor
-import io.github.crackthecodeabhi.kreds.redis.RedisMessage
-import io.github.crackthecodeabhi.kreds.withReentrantLock
+import io.github.crackthecodeabhi.kreds.messages.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.withReentrantLock
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 

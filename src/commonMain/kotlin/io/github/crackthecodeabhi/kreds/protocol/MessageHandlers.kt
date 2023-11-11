@@ -19,10 +19,12 @@
 
 package io.github.crackthecodeabhi.kreds.protocol
 
-import io.github.crackthecodeabhi.kreds.redis.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.ArrayRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.FullBulkStringRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.IntegerRedisMessage
+import io.github.crackthecodeabhi.kreds.messages.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.SimpleStringRedisMessage
 import io.github.crackthecodeabhi.kreds.toDefaultCharset
-import io.netty.buffer.Unpooled
-import io.netty.handler.codec.redis.*
 
 internal interface MessageHandler<T> {
     fun canHandle(message: RedisMessage): Boolean
@@ -34,16 +36,16 @@ internal object SimpleStringHandler : MessageHandler<String> {
 
     override fun doHandle(message: RedisMessage): String {
         val msg = message as SimpleStringRedisMessage
-        return msg.content() ?: throw KredsRedisDataException("Unexpected: received null as RESP Simple String")
+        return msg.content
     }
 }
 
-internal object IntegerHandler : MessageHandler<Long> {
+internal object IntegerHandler : MessageHandler<Int> {
     override fun canHandle(message: RedisMessage): Boolean = message is IntegerRedisMessage
 
-    override fun doHandle(message: RedisMessage): Long {
+    override fun doHandle(message: RedisMessage): Int {
         val msg = message as IntegerRedisMessage
-        return msg.value()
+        return msg.value
     }
 }
 
@@ -52,9 +54,9 @@ internal object BulkStringHandler : MessageHandler<String?> {
 
     override fun doHandle(message: RedisMessage): String? {
         val msg = message as FullBulkStringRedisMessage
-        return if (msg.isNull) null
-        else if (msg.content() == Unpooled.EMPTY_BUFFER) ""
-        else msg.content().toDefaultCharset()
+        return if (msg.isNull()) null
+        else if (msg.content.size == 0L) ""
+        else msg.content.toDefaultCharset()
     }
 }
 
@@ -63,10 +65,10 @@ internal object ArrayHandler : MessageHandler<List<*>?> {
 
     override fun doHandle(message: RedisMessage): List<*>? {
         val msg = message as ArrayRedisMessage
-        return if (msg.isNull) null
-        else if (msg.children().isEmpty()) emptyList()
+        return if (msg.isNull()) null
+        else if (msg.children.isEmpty()) emptyList()
         else {
-            msg.children().map {
+            msg.children.map {
                 when (true) {
                     SimpleStringHandler.canHandle(it) -> SimpleStringHandler.doHandle(it)
                     IntegerHandler.canHandle(it) -> IntegerHandler.doHandle(it)

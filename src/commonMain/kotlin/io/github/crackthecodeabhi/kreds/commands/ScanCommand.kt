@@ -24,7 +24,7 @@ import io.github.crackthecodeabhi.kreds.StringFieldValue
 import io.github.crackthecodeabhi.kreds.protocol.ArrayCommandProcessor
 import io.github.crackthecodeabhi.kreds.protocol.ICommandProcessor
 import io.github.crackthecodeabhi.kreds.protocol.KredsRedisDataException
-import io.github.crackthecodeabhi.kreds.redis.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.RedisMessage
 import io.github.crackthecodeabhi.kreds.second
 
 public interface IScanResult<R> {

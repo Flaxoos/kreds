@@ -21,7 +21,7 @@ package io.github.crackthecodeabhi.kreds.args
 
 import com.ionspin.kotlin.bignum.decimal.BigDecimal
 import com.ionspin.kotlin.bignum.decimal.toBigDecimal
-import io.github.crackthecodeabhi.kreds.KredsException
+import io.github.crackthecodeabhi.kreds.messages.KredsException
 import kotlin.jvm.JvmInline
 
 internal sealed interface Argument

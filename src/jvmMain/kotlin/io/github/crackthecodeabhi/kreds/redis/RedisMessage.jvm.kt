@@ -19,4 +19,21 @@
 
 package io.github.crackthecodeabhi.kreds.redis
 
-public actual class RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.RedisMessage
+import io.github.crackthecodeabhi.kreds.messages.toRedisString
+
+public actual sealed interface RedisMessage
+
+public actual class AbstractStringRedisMessage actual constructor(public actual val content: String ) : RedisMessage {
+    override fun toString(): String = toRedisString()
+}
+public actual class ArrayHeaderRedisMessage() : RedisMessage
+public actual class ArrayRedisMessage() : RedisMessage
+public actual class BulkStringHeaderRedisMessage() : RedisMessage
+public actual class DefaultBulkStringRedisContent() : RedisMessage
+public actual class DefaultLastBulkStringRedisContent() : RedisMessage
+public actual class ErrorRedisMessage() : RedisMessage
+public actual class FullBulkStringRedisMessage() : RedisMessage
+public actual class InlineCommandRedisMessage() : RedisMessage
+public actual class IntegerRedisMessage() : RedisMessage
+public actual class SimpleStringRedisMessage() : RedisMessage

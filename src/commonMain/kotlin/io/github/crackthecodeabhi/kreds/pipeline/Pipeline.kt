@@ -19,13 +19,14 @@
 
 package io.github.crackthecodeabhi.kreds.pipeline
 
-import io.github.crackthecodeabhi.kreds.ExclusiveObject
-import io.github.crackthecodeabhi.kreds.KredsException
-import io.github.crackthecodeabhi.kreds.ReentrantMutexContextKey
+import io.github.crackthecodeabhi.kreds.messages.ExclusiveObject
+import io.github.crackthecodeabhi.kreds.messages.KredsException
+import io.github.crackthecodeabhi.kreds.messages.ReentrantMutexContextKey
 import io.github.crackthecodeabhi.kreds.commands.*
 import io.github.crackthecodeabhi.kreds.connection.DefaultKredsClient
+import io.github.crackthecodeabhi.kreds.messages.ErrorRedisMessage
 import io.github.crackthecodeabhi.kreds.protocol.KredsRedisDataException
-import io.github.crackthecodeabhi.kreds.withReentrantLock
+import io.github.crackthecodeabhi.kreds.messages.withReentrantLock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -93,12 +94,7 @@ internal class PipelineImpl(private val client: DefaultKredsClient) : ExclusiveO
         responseMessages.onEachIndexed { idx, msg ->
             if (msg is ErrorRedisMessage)
                 responseList.add(
-                    KredsRedisDataException(
-                        msg.content(),
-                        null,
-                        enableSuppression = true,
-                        writableStackTrace = false
-                    )
+                    KredsRedisDataException(msg.content, null)
                 )
             else responseList.add(commands[idx].processor.decode(msg))
         }

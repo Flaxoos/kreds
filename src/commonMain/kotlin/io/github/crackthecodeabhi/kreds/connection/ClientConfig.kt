@@ -25,47 +25,21 @@ public class KredsClientConfig {
         public const val NO_READ_TIMEOUT: Int = -1
     }
 
-    public val connectTimeOutMillis: Int
+    public var connectTimeOutMillis: Int? = null
 
-    public val soKeepAlive: Boolean
+    public var soKeepAlive: Boolean = false
 
     /**
      * In Subscriber client, readTimeout can be set to -1, to never timeout from reading from subscription connection.
      */
-    public val readTimeoutSeconds: Int
+    public var readTimeoutSeconds: Int = NO_READ_TIMEOUT
 
-    private constructor(builder: Builder) {
-        // init with configured values or default
-        connectTimeOutMillis = builder.connectTimeOutMillis ?: 5000
-        readTimeoutSeconds = builder.readTimeoutSeconds ?: 30
-        soKeepAlive = builder.soKeepAlive ?: true
-    }
-
-    private constructor(builder: Builder, other: KredsClientConfig) {
-        // init with configured values or copy from other
-        connectTimeOutMillis = builder.connectTimeOutMillis ?: other.connectTimeOutMillis
-        readTimeoutSeconds = builder.readTimeoutSeconds ?: other.readTimeoutSeconds
-        soKeepAlive = builder.soKeepAlive ?: other.soKeepAlive
-    }
-
-    public data class Builder(
-        var connectTimeOutMillis: Int? = null,
-        var readTimeoutSeconds: Int? = null,
-        var soKeepAlive: Boolean? = null
-    ) {
-        /**
-         * @param defaultSource if any property is not set, values will be initialized from [defaultSource]
-         * @throws IllegalArgumentException if any argument is invalid or conflicts with other configuration
-         */
-        public fun build(defaultSource: KredsClientConfig? = null): KredsClientConfig =
-            defaultSource?.let { KredsClientConfig(this, defaultSource) } ?: KredsClientConfig(this)
-    }
 }
 
-internal val defaultClientConfig: KredsClientConfig = KredsClientConfig.Builder().build()
+internal val defaultClientConfig: KredsClientConfig = KredsClientConfig()
 
 internal val defaultSubscriberClientConfig: KredsClientConfig =
-    KredsClientConfig.Builder(readTimeoutSeconds = KredsClientConfig.NO_READ_TIMEOUT).build()
+    KredsClientConfig().apply { readTimeoutSeconds = KredsClientConfig.NO_READ_TIMEOUT}
 
 internal val defaultBlockingKredsClientConfig: KredsClientConfig =
-    KredsClientConfig.Builder(readTimeoutSeconds = KredsClientConfig.NO_READ_TIMEOUT).build()
+    KredsClientConfig().apply { readTimeoutSeconds = KredsClientConfig.NO_READ_TIMEOUT}
